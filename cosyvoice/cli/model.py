@@ -281,10 +281,13 @@ class CosyVoice2Model(CosyVoiceModel):
     def load_vllm(self, model_dir):
         export_cosyvoice2_vllm(self.llm, model_dir, self.device)
         from vllm import EngineArgs, LLMEngine
-        engine_args = EngineArgs(model=model_dir,
-                                 skip_tokenizer_init=True,
-                                 enable_prompt_embeds=True,
-                                 gpu_memory_utilization=0.2)
+        import os
+        engine_args = EngineArgs(
+            model=model_dir,
+            skip_tokenizer_init=True,
+            enable_prompt_embeds=True,
+            max_model_len=int(os.environ.get('COSYVOICE_VLLM_MAX_MODEL_LEN', '4096')),
+            gpu_memory_utilization=float(os.environ.get('COSYVOICE_VLLM_GPU_MEM_UTIL', '0.05')))
         self.llm.vllm = LLMEngine.from_engine_args(engine_args)
         self.llm.lock = threading.Lock()
         del self.llm.llm.model.model.layers
