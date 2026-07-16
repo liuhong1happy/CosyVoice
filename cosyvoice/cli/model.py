@@ -192,7 +192,7 @@ class CosyVoiceModel:
         if stream is True:
             token_hop_len = self.token_min_hop_len
             while True:
-                time.sleep(0.1)
+                time.sleep(0.01)
                 if len(self.tts_speech_token_dict[this_uuid]) >= token_hop_len + self.token_overlap_len:
                     this_tts_speech_token = torch.tensor(self.tts_speech_token_dict[this_uuid][:token_hop_len + self.token_overlap_len]) \
                         .unsqueeze(dim=0)
@@ -287,7 +287,7 @@ class CosyVoice2Model(CosyVoiceModel):
             skip_tokenizer_init=True,
             enable_prompt_embeds=True,
             max_model_len=int(os.environ.get('COSYVOICE_VLLM_MAX_MODEL_LEN', '4096')),
-            gpu_memory_utilization=float(os.environ.get('COSYVOICE_VLLM_GPU_MEM_UTIL', '0.05')))
+            gpu_memory_utilization=float(os.environ.get('COSYVOICE_VLLM_GPU_MEM_UTIL', '0.3')))
         self.llm.vllm = LLMEngine.from_engine_args(engine_args)
         self.llm.lock = threading.Lock()
         del self.llm.llm.model.model.layers
@@ -347,7 +347,7 @@ class CosyVoice2Model(CosyVoiceModel):
             token_offset = 0
             prompt_token_pad = int(np.ceil(flow_prompt_speech_token.shape[1] / self.token_hop_len) * self.token_hop_len - flow_prompt_speech_token.shape[1])
             while True:
-                time.sleep(0.1)
+                time.sleep(0.01)
                 this_token_hop_len = self.token_hop_len + prompt_token_pad if token_offset == 0 else self.token_hop_len
                 if len(self.tts_speech_token_dict[this_uuid]) - token_offset >= this_token_hop_len + self.flow.pre_lookahead_len:
                     this_tts_speech_token = torch.tensor(self.tts_speech_token_dict[this_uuid][:token_offset + this_token_hop_len + self.flow.pre_lookahead_len]).unsqueeze(dim=0)
