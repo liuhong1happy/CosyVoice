@@ -344,6 +344,7 @@ class CosyVoice2Model(CosyVoiceModel):
             p = threading.Thread(target=self.vc_job, args=(source_speech_token, this_uuid))
         p.start()
         if stream is True:
+            self.token_hop_len = 25  # reset for each tts call
             token_offset = 0
             prompt_token_pad = int(np.ceil(flow_prompt_speech_token.shape[1] / self.token_hop_len) * self.token_hop_len - flow_prompt_speech_token.shape[1])
             while True:
