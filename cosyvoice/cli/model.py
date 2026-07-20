@@ -22,7 +22,7 @@ from torch.nn import functional as F
 from contextlib import nullcontext
 import uuid
 from cosyvoice.utils.common import fade_in_out
-from cosyvoice.utils.file_utils import convert_onnx_to_trt, export_cosyvoice2_vllm
+from cosyvoice.utils.file_utils import convert_onnx_to_trt, export_cosyvoice2_vllm, logging
 from cosyvoice.utils.common import TrtContextWrapper
 
 
@@ -344,13 +344,16 @@ class CosyVoice2Model(CosyVoiceModel):
             p = threading.Thread(target=self.vc_job, args=(source_speech_token, this_uuid))
         p.start()
         if stream is True:
+            logging.info(f'[tts] BEFORE reset token_hop_len={self.token_hop_len}')
             self.token_hop_len = 25  # reset for each tts call
+            logging.info(f'[tts] AFTER reset token_hop_len={self.token_hop_len}')
             token_offset = 0
             prompt_token_pad = int(np.ceil(flow_prompt_speech_token.shape[1] / self.token_hop_len) * self.token_hop_len - flow_prompt_speech_token.shape[1])
             while True:
                 time.sleep(0.01)
                 this_token_hop_len = self.token_hop_len + prompt_token_pad if token_offset == 0 else self.token_hop_len
                 if len(self.tts_speech_token_dict[this_uuid]) - token_offset >= this_token_hop_len + self.flow.pre_lookahead_len:
+                    logging.info(f'[tts] chunk: token_hop_len={self.token_hop_len} this_hop={this_token_hop_len} offset={token_offset} total_tokens={len(self.tts_speech_token_dict[this_uuid])} prompt_token_pad={prompt_token_pad} llm_end={self.llm_end_dict[this_uuid]}')
                     this_tts_speech_token = torch.tensor(self.tts_speech_token_dict[this_uuid][:token_offset + this_token_hop_len + self.flow.pre_lookahead_len]).unsqueeze(dim=0)
                     this_tts_speech = self.token2wav(token=this_tts_speech_token,
                                                      prompt_token=flow_prompt_speech_token,
